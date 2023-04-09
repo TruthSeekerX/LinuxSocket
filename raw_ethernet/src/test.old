@@ -1,0 +1,58 @@
+#include <signal.h>
+#include <stdio.h>
+
+#include "ethernet_frame.h"
+#include "udp_datagram.h"
+#include "ip_packet.h"
+
+int kill_flag;
+
+void signal_handler(int signal);
+void udp_data_payload_handler(udp_dgrm_t* udp_datagram);
+
+int main(void) {
+    unsigned char test_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                 0x00, 0x00, 0x08, 0x00, 0x45, 0x00, 0x00, 0x20, 0x9e, 0xe7,
+                                 0x40, 0x00, 0x40, 0x11, 0x9d, 0xe3, 0x7f, 0x00, 0x00, 0x01,
+                                 0x7f, 0x00, 0x00, 0x01, 0xc3, 0x6b, 0xd4, 0x31, 0x00, 0x0c,
+                                 0xfe, 0x1f, 0x67, 0x61, 0x6f, 0x0a};
+
+    while (1) {
+        ipv4_packet_t *ipv4_packet;
+        ipv4_packet_t ipv4_pkt;
+        printf("size of %lu\n", sizeof(ipv4_packet));
+        printf("size of %lu\n", sizeof(ipv4_packet_t));
+        printf("size of %lu\n", sizeof(ipv4_pkt));
+        kill_flag = 0;
+        int rsize = sizeof(test_data) / sizeof(unsigned char);
+
+        on_ethernet_frame_received(test_data, rsize);
+
+        if (kill_flag) {
+            break;
+        }
+    }
+    return 0;
+}
+
+void udp_data_payload_handler(udp_dgrm_t* udp_datagram) {
+    uint8_t* udp_payload = udp_datagram->data;
+
+    if (udp_payload[0] == 'g' && udp_payload[1] == 'a' && udp_payload[2] == 'o') {
+        printf("UPD with 'gao'detected:\n");
+        printf("Source Port: %u\n", udp_datagram->src_port);
+        printf("Destination Port: %u\n", udp_datagram->dst_port);
+    } else if (udp_payload[0] == 'q') {
+        // TO-DO
+        // send signal to close the socket and exit the program.
+        signal(SIGINT, signal_handler);
+    } else {
+        // Do nothing, ignore the rest
+    }
+}
+
+void signal_handler(int signal) {
+    if (signal == SIGINT) {
+        kill_flag = 1;
+    }
+}
