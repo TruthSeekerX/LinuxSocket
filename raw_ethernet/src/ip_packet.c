@@ -12,7 +12,7 @@ static bool ipv4_packet_copy_data(const uint8_t* data_src, const size_t data_len
                                   uint8_t** data_dst);
 
 IP_ERR ipv4_packet_create(ipv4_packet_t** ipv4_packet) {
-    *ipv4_packet = (ipv4_packet_t*)malloc(sizeof(ipv4_packet_t));
+    *ipv4_packet = (ipv4_packet_t*)calloc(sizeof(ipv4_packet_t), 1);
     if (*ipv4_packet == NULL) {
         return IP_PKT_ERR_BAD_MEMORY_ALLOC;
     } else {
@@ -28,26 +28,26 @@ IP_ERR ipv4_packet_parse(const uint8_t* raw_data, ipv4_packet_t* ipv4_packet) {
     ipv4_packet->ihl       = (uint8_t)raw_data[IP_PKT_OFFSET_VER_IHL] & IP_PKT_MASK_IHL;
     ipv4_packet->dscp      = (uint8_t)(raw_data[IP_PKT_OFFSET_DSCP_ECN] & IP_PKT_MASK_DSCP) >> 3;
     ipv4_packet->ecn       = (uint8_t)raw_data[IP_PKT_OFFSET_DSCP_ECN] & IP_PKT_MASK_ECN;
-    ipv4_packet->total_len = (uint16_t)(raw_data[IP_PKT_OFFSET_TOTAL_LEN] << 8) +
-                             (uint16_t)(raw_data[IP_PKT_OFFSET_TOTAL_LEN + 1] << 0);
-    ipv4_packet->identification = (uint16_t)(raw_data[IP_PKT_OFFSET_IDENTIFICATION] << 8) +
-                                  (uint16_t)(raw_data[IP_PKT_OFFSET_IDENTIFICATION + 1] << 0);
+    ipv4_packet->total_len = ((uint16_t)raw_data[IP_PKT_OFFSET_TOTAL_LEN] << 8) +
+                             ((uint16_t)raw_data[IP_PKT_OFFSET_TOTAL_LEN + 1] << 0);
+    ipv4_packet->identification = ((uint16_t)raw_data[IP_PKT_OFFSET_IDENTIFICATION] << 8) +
+                                  ((uint16_t)raw_data[IP_PKT_OFFSET_IDENTIFICATION + 1] << 0);
     ipv4_packet->flags = (raw_data[IP_PKT_OFFSET_FLAGS_FRAGMENT] & IP_PKT_MASK_FLAGS) >> 5;
     ipv4_packet->fragment =
-        (uint16_t)((raw_data[IP_PKT_OFFSET_FLAGS_FRAGMENT] & IP_PKT_MASK_FRAGMENT_HI) << 8) +
-        (uint16_t)((raw_data[IP_PKT_OFFSET_FLAGS_FRAGMENT + 1] & IP_PKT_MASK_FRAGMENT_LOW) << 0);
+        ((uint16_t)(raw_data[IP_PKT_OFFSET_FLAGS_FRAGMENT] & IP_PKT_MASK_FRAGMENT_HI) << 8) +
+        ((uint16_t)(raw_data[IP_PKT_OFFSET_FLAGS_FRAGMENT + 1] & IP_PKT_MASK_FRAGMENT_LOW) << 0);
     ipv4_packet->ttl      = raw_data[IP_PKT_OFFSET_TTL];
     ipv4_packet->protocol = raw_data[IP_PKT_OFFSET_PROTOCOL];
-    ipv4_packet->checksum = (uint16_t)(raw_data[IP_PKT_OFFSET_CHECKSUM] << 8) +
-                            (uint16_t)(raw_data[IP_PKT_OFFSET_CHECKSUM + 1] << 0);
-    ipv4_packet->src_addr = (uint32_t)(raw_data[IP_PKT_OFFSET_SRC_IP] << 24) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_SRC_IP + 1] << 16) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_SRC_IP + 2] << 8) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_SRC_IP + 3] << 0);
-    ipv4_packet->dst_addr = (uint32_t)(raw_data[IP_PKT_OFFSET_DST_IP] << 24) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_DST_IP + 1] << 16) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_DST_IP + 2] << 8) +
-                            (uint32_t)(raw_data[IP_PKT_OFFSET_DST_IP + 3] << 0);
+    ipv4_packet->checksum = ((uint16_t)raw_data[IP_PKT_OFFSET_CHECKSUM] << 8) +
+                            ((uint16_t)raw_data[IP_PKT_OFFSET_CHECKSUM + 1] << 0);
+    ipv4_packet->src_addr = ((uint32_t)raw_data[IP_PKT_OFFSET_SRC_IP] << 24) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_SRC_IP + 1] << 16) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_SRC_IP + 2] << 8) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_SRC_IP + 3] << 0);
+    ipv4_packet->dst_addr = ((uint32_t)raw_data[IP_PKT_OFFSET_DST_IP] << 24) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_DST_IP + 1] << 16) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_DST_IP + 2] << 8) +
+                            ((uint32_t)raw_data[IP_PKT_OFFSET_DST_IP + 3] << 0);
     if (ipv4_packet->ihl < 5) {
         return IP_PKT_ERR_BAD_IHL;
     } else if (ipv4_packet->ihl == 5) {  // Default IPv4 packet

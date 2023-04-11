@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "ethernet_frame.h"
 #include "udp_datagram.h"
 
 int kill_flag = 0;
-
+// TCP DUMP GITHUB
 void udp_data_payload_handler(udp_dgrm_t* udp_datagram);
 void signal_handler(int signal);
 
@@ -23,6 +24,7 @@ int main(void) {
     }
     while (1) {
         kill_flag  = 0;
+        memset(buffer, 0, ETH_BUFFER_LEN);
         int rsize  = recvfrom(s, buffer, ETH_BUFFER_LEN, 0, NULL, NULL);
 
         if (rsize < 0) {

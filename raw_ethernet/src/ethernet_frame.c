@@ -13,7 +13,7 @@ static bool ethernet_frame_copy_data(const uint8_t *data_src, const size_t data_
  * \details eth_frame_t object has to be freed by ethernet_frame_free().
  */
 ETH_ERR ethernet_frame_create(eth_frame_t **ethernet_frame) {
-    *ethernet_frame = (eth_frame_t *)malloc(sizeof(eth_frame_t));
+    *ethernet_frame = (eth_frame_t *)calloc(sizeof(eth_frame_t), 1);
     if (*ethernet_frame == NULL) {
         return ETH_ERR_BAD_MEMORY_ALLOC;
     } else {
@@ -33,17 +33,21 @@ ETH_ERR ethernet_frame_create(eth_frame_t **ethernet_frame) {
  */
 ETH_ERR ethernet_frame_parse(const uint8_t *raw_data, const size_t frame_size,
                              eth_frame_t *ethernet_frame) {
-    uint64_t dst_addr = ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR] << 16) +
-                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 1] << 8) +
-                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 2] << 0);
+    uint64_t dst_addr = ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 0] << 40) +
+                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 1] << 32) +
+                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 2] << 24) +
+                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 3] << 16) +
+                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 4] << 8) +
+                        ((uint64_t)raw_data[ETH_FRAME_OFFSET_DST_ADDR + 5] << 0);
 
-    ethernet_frame->dst_addr = (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_DST_ADDR) << 16) +
-                               (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_DST_ADDR + 1) << 8) +
-                               (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_DST_ADDR + 2) << 0);
+    ethernet_frame->dst_addr = dst_addr;
 
-    ethernet_frame->src_addr = (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR) << 16) +
-                               (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 1) << 8) +
-                               (uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 2) << 0);
+    ethernet_frame->src_addr = ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 0)) << 40) +
+                               ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 1)) << 32) +
+                               ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 2)) << 24) +
+                               ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 3)) << 16) +
+                               ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 4)) << 8) +
+                               ((uint64_t)(*(raw_data + ETH_FRAME_OFFSET_SRC_ADDR + 5)) << 0);
 
     uint16_t type =
         (raw_data[ETH_FRAME_OFFSET_TYPE] << 8) + (raw_data[ETH_FRAME_OFFSET_TYPE + 1] << 0);
@@ -53,10 +57,10 @@ ETH_ERR ethernet_frame_parse(const uint8_t *raw_data, const size_t frame_size,
         ethernet_frame->eth_type =
             (*(raw_data + ETH_FRAME_OFFSET_TYPE + ETH_FRAME_OFFSET_VLAN) << 8) +
             (*(raw_data + ETH_FRAME_OFFSET_TYPE + ETH_FRAME_OFFSET_VLAN + 1) << 0);
-        ethernet_frame->data = raw_data + ETH_FRAME_VLAN_HEADER_LEN;
-        bool result =
-            ethernet_frame_copy_data(raw_data + ETH_FRAME_VLAN_HEADER_LEN,
-                                     frame_size - ETH_FRAME_VLAN_HEADER_LEN, &(ethernet_frame->data));
+        // ethernet_frame->data = raw_data + ETH_FRAME_VLAN_HEADER_LEN;
+        bool result = ethernet_frame_copy_data(raw_data + ETH_FRAME_VLAN_HEADER_LEN,
+                                               frame_size - ETH_FRAME_VLAN_HEADER_LEN,
+                                               &(ethernet_frame->data));
         if (result == false) {
             return ETH_ERR_BAD_MEMORY_ALLOC;
         } else {
@@ -65,7 +69,7 @@ ETH_ERR ethernet_frame_parse(const uint8_t *raw_data, const size_t frame_size,
     } else {
         ethernet_frame->eth_vlan = 0;
         ethernet_frame->eth_type = type;
-        ethernet_frame->data = ethernet_frame->data = raw_data + ETH_FRAME_VLAN_HEADER_LEN;
+        // ethernet_frame->data = ethernet_frame->data = raw_data + ETH_FRAME_VLAN_HEADER_LEN;
         bool result =
             ethernet_frame_copy_data(raw_data + ETH_FRAME_HEADER_LEN,
                                      frame_size - ETH_FRAME_HEADER_LEN, &(ethernet_frame->data));
